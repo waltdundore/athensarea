@@ -1,0 +1,22 @@
+- name: Install Docker and Deploy App
+  hosts: all
+  become: true
+  tasks:
+    - name: Install dependencies
+      apt:
+        name:
+          - docker.io
+          - docker-compose
+          - git
+        state: present
+        update_cache: true
+
+    - name: Add user to docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+
+    - name: Deploy docker stack
+      community.docker.docker_compose:
+        project_src: "{{ playbook_dir }}/.."
