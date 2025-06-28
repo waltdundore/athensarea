@@ -1,10 +1,9 @@
 # 🚀 Makefile for AthensArea.net — Mission-Ready Edition
 # Dual deployment: Vagrant VM or local Docker Compose
 
-VAULT_FILE=ansible/group_vars/all/vault.yml
-VAULT_PASS=.vault_pass.txt
-
-REQUIRED_SECRETS=secrets/db_password.txt secrets/directus_key.txt secrets/directus_secret.txt
+VAULT_FILE = ansible/group_vars/all/vault.yml
+VAULT_PASS = .vault_pass.txt
+REQUIRED_SECRETS = secrets/db_password.txt secrets/directus_key.txt secrets/directus_secret.txt
 
 .PHONY: setup clean vault-encrypt vault-decrypt vault-check publish \
         deploy vagrant-deploy docker-deploy test lint directus-setup docker-scan \
@@ -50,6 +49,17 @@ vm-reset:
 ## 📄 Stream Directus logs from inside Vagrant
 logs:
 	@vagrant ssh -c 'cd /vagrant && docker compose logs -f'
+
+## 🛡️ Validate all required Docker secrets exist
+check-secrets:
+	@echo "🔐 Validating Docker secrets..."
+	@for f in $(REQUIRED_SECRETS); do \
+		if [ ! -f "$$f" ]; then \
+			echo "❌ Missing secret: $$f"; \
+			exit 1; \
+		fi; \
+	done
+	@echo "✅ All required secrets are present."
 
 ## 🚀 Deploy based on context (prefers Vagrant if present)
 deploy: check-secrets
@@ -132,14 +142,3 @@ vm-enable-directus:
 docker-scan:
 	@echo "🔍 Scanning Docker images..."
 	@echo "(🛠️ TODO: Integrate Snyk or Docker Scout here)"
-
-## 🛡️ Validate all required Docker secrets exist
-check-secrets:
-	@echo "🔐 Validating Docker secrets..."
-	@for f in $(REQUIRED_SECRETS); do \
-		if [ ! -f "$$f" ]; then \
-			echo "❌ Missing secret: $$f"; \
-			exit 1; \
-		fi \
-	done
-	@echo "✅ All required secrets are present."
