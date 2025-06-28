@@ -1,6 +1,68 @@
-version: '3'
+version: '3.8'
+
 services:
-  web:
-    build: .
+  directus:
+    image: directus/directus:latest
+    container_name: directus
     ports:
-      - '3000:80'
+      - "${DIRECTUS_PORT}:8055"
+    environment:
+      DB_CLIENT: postgres
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      KEY_FILE: /run/secrets/directus_key
+      SECRET_FILE: /run/secrets/directus_secret
+      ADMIN_EMAIL_FILE: /run/secrets/directus_admin_email
+      ADMIN_PASSWORD_FILE: /run/secrets/directus_admin_password
+    volumes:
+      - ./directus/uploads:/directus/uploads
+      - ./directus/extensions:/directus/extensions
+    secrets:
+      - db_password
+      - directus_key
+      - directus_secret
+      - directus_admin_email
+      - directus_admin_password
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    secrets:
+      - db_password
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${WEB_PORT}:3000"
+    volumes:
+      - ./public:/usr/src/app/public
+    depends_on:
+      - directus
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  directus_key:
+    file: ./secrets/directus_key.txt
+  directus_secret:
+    file: ./secrets/directus_secret.txt
+  directus_admin_email:
+    file: ./secrets/directus_admin_email.txt
+  directus_admin_password:
+    file: ./secrets/directus_admin_password.txt
+
+volumes:
+  pgdata:

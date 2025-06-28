@@ -1,3 +1,24 @@
+# Local environment files
 .env
 *.pem
+
+# Ansible secrets
 ansible/group_vars/all/vault.yml
+
+# Docker secrets
+secrets/
+secrets/*.txt
+
+# Vault password helper
+.vault_pass.txt
+
+# Vagrant
+.vagrant/
+
+# Logs and retry files
+*.retry
+logs/
+*.log
+
+# MacOS artifacts
+.DS_Store
