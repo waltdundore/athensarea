@@ -1,5 +1,6 @@
+---
 - name: Copy Directus systemd service
-  copy:
+  ansible.builtin.copy:
     src: scripts/directus-stack.service
     dest: /etc/systemd/system/directus-stack.service
     owner: root
@@ -7,10 +8,11 @@
     mode: '0644'
 
 - name: Reload systemd daemon
-  command: systemctl daemon-reload
+  ansible.builtin.systemd:
+    daemon_reload: true
 
-- name: Enable Directus stack service
-  systemd:
+- name: Enable and start Directus stack service
+  ansible.builtin.systemd:
     name: directus-stack
     enabled: true
     state: restarted
