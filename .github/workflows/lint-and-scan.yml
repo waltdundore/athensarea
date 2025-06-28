@@ -16,12 +16,16 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x'
+        python-version: '3.11'
 
-    - name: Install linting tools
+    - name: Install Ansible and linting tools via pip
       run: |
-        sudo apt-get update
-        sudo apt-get install -y yamllint ansible-lint
+        python -m pip install --upgrade pip
+        pip install \
+          ansible==9.2.0 \
+          ansible-core==2.16.3 \
+          ansible-lint==6.17.2 \
+          yamllint==1.33.0
 
     - name: Run ansible-lint
       run: |
@@ -39,8 +43,7 @@ jobs:
       env:
         ANSIBLE_VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
 
-    - name: Scan for secrets with gitleaks
+    - name: Scan for secrets with Gitleaks
       uses: gitleaks/gitleaks-action@v2
       with:
-        config-path: .github/.gitleaks.toml  # Optional: custom config
-
+        config-path: .github/.gitleaks.toml # Optional: remove or create this file
