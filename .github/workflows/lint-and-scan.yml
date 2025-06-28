@@ -39,12 +39,8 @@ jobs:
       env:
         ANSIBLE_VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
 
-    - name: Scan for secrets
-      uses: yandex-cloud/actions-secret-scanner@v1
+    - name: Scan for secrets with gitleaks
+      uses: gitleaks/gitleaks-action@v2
       with:
-        exclude: |
-          .git
-          .vagrant
-          node_modules
-          public
-          ansible/group_vars/all/vault.yml
+        config-path: .github/.gitleaks.toml  # Optional: custom config
+
