@@ -1,1 +1,3 @@
-- import_tasks: systemd.yml
+---
+- name: Include systemd configuration tasks
+  ansible.builtin.import_tasks: systemd.yml
