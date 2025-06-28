@@ -1,24 +1,40 @@
 #!/bin/bash
-# secret_scan.sh - scans the project for potentially sensitive content
+set -euo pipefail
+echo "🔍 Scanning for potential hardcoded secrets..."
 
-PATTERNS=("PRIVATE KEY-----" "password=" "api_key=")
-FILES=$(git ls-files | grep -v 'scripts/secret_scan.sh')
+# Patterns we care about
+PATTERN='(AKIA[0-9A-Z]{16})'                             # AWS keys
+PATTERN+='|(gh[pousr]_[A-Za-z0-9]{36,})'                 # GitHub tokens
+PATTERN+='|(sk_live_[0-9a-zA-Z]{24,})'                   # Stripe live keys
+PATTERN+='|-----BEGIN (RSA|DSA|EC|OPENSSH|PRIVATE) KEY-----' # PEM headers
+PATTERN+='|eyJ[A-Za-z0-9_-]{10,}'                        # JWT tokens
+PATTERN+='|xox[baprs]-[0-9a-zA-Z]{10,}'                  # Slack tokens
 
-echo "🔍 Scanning for secrets..."
+# Excluded paths (intentionally allowed secrets)
+EXCLUDED_PATHS=(
+  ./secrets/
+  ./ansible/group_vars/all/vault.yml
+)
 
-FOUND=0
-for file in $FILES; do
-  for pattern in "${PATTERNS[@]}"; do
-    if grep -q -E -- "$pattern" "$file"; then
-      echo "⚠️  Potential secret found matching pattern: $pattern"
-      echo "   → $file"
-      FOUND=1
-    fi
-  done
-done
+# Build list of files to scan, ignoring excluded paths
+FILES_TO_SCAN=$(find . -type f \
+  ! -path "./.git/*" \
+  ! -path "./.vagrant/*" \
+  ! -path "./public/*" \
+  ! -path "./node_modules/*" \
+  ! -path "./scripts/secret_scan.sh" \
+  ! -name "*.md" \
+  ! -name "Makefile" \
+  ! -name "vault.yml" \
+  ! -path "./secrets/*" \
+)
 
-if [ "$FOUND" -eq 1 ]; then
-  echo "❌ Commit blocked due to potential secrets."
+# Run scan
+RESULTS=$(grep -IEn "$PATTERN" $FILES_TO_SCAN || true)
+
+if [[ -n "$RESULTS" ]]; then
+  echo "$RESULTS"
+  echo "❌ Potential hardcoded secrets detected!"
   exit 1
 else
   echo "✅ No secrets detected."

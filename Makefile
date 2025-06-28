@@ -88,14 +88,18 @@ vault-check:
 	fi
 
 ## 🚀 Publish Git changes with preflight checks
-publish: vault-check
-	@echo "📦 Preparing to publish..."
+publish:
+	@echo "🔐 Verifying vault encryption..."
+	@if ! ansible-vault view $(VAULT_FILE) --vault-password-file=$(VAULT_PASS) > /dev/null 2>&1; then \
+		echo "⚠️ Vault is NOT encrypted. Auto-encrypting..."; \
+		ansible-vault encrypt $(VAULT_FILE) --vault-password-file=$(VAULT_PASS); \
+	fi
+	@echo "📦 Staging all changes..."
 	@git add .
 	@git status
 	@read -p '✍️ Enter commit message: ' msg; \
-	echo "🔎 Running secret scan..."; \
-	chmod +x scripts/secret_scan.sh && ./scripts/secret_scan.sh && \
-	git commit -m "$$msg" && git push || echo "❌ Commit aborted. Possible secrets detected."
+	./scripts/secret_scan.sh && \
+	git commit -m "$$msg" && git push || echo "❌ Commit blocked due to potential secrets."
 
 ## 🔄 Update public/ submodule from GitHub
 update-public:
