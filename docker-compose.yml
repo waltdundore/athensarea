@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   db:
     image: postgres:15
@@ -36,7 +38,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    platform: linux/arm64  # ✅ runs native on M1/M2/M3/M4 and Ubuntu on Parallels
+    platform: linux/arm64
     ports:
       - "3000:80"
     depends_on:
@@ -48,9 +50,9 @@ volumes:
   pgdata:
 
 secrets:
+  directus_db_password:
+    file: ./secrets/db_password.txt
   directus_key:
     file: ./secrets/directus_key.txt
   directus_secret:
     file: ./secrets/directus_secret.txt
-  directus_db_password:
-    file: ./secrets/db_password.txt

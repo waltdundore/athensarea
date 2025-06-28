@@ -9,7 +9,7 @@ REQUIRED_SECRETS = secrets/db_password.txt secrets/directus_key.txt secrets/dire
         deploy vagrant-deploy docker-deploy test lint directus-setup docker-scan \
         vm-up vm-ssh dev-up dev-upd vm-reset logs update-public check-secrets
 
-## 🔧 Initial setup: permissions, hooks, submodules
+## 🔧 Initial setup
 setup:
 	@echo "🔧 Running initial setup..."
 	@chmod +x scripts/*.sh
@@ -17,40 +17,40 @@ setup:
 	@git submodule update --init --recursive
 	@echo "✅ Setup complete."
 
-## 🧹 Clean all working files and artifacts
+## 🧹 Clean artifacts
 clean:
 	@echo "🧹 Cleaning environment..."
 	@rm -rf .vagrant *.retry __pycache__ logs/*.log
 	@echo "✅ Clean complete."
 
-## ☁️ Start the Vagrant development VM
+## ☁️ Start the Vagrant VM
 vm-up:
 	@vagrant up --provider=parallels
 
-## 🔐 SSH into the Vagrant VM
+## 🔐 SSH into the VM
 vm-ssh:
 	@vagrant ssh
 
-## 🚀 Start Docker Compose inside Vagrant (foreground)
+## 🐳 Start Docker Compose inside VM (foreground)
 dev-up:
 	@vagrant ssh -c 'cd /vagrant && docker compose up'
 
-## 🔁 Rebuild and run Docker Compose inside Vagrant (detached)
+## 🔁 Rebuild and run Docker Compose (detached)
 dev-upd:
 	@vagrant ssh -c 'cd /vagrant && docker compose up --build -d'
 
-## 💣 Destroy the Vagrant VM and clear cache
+## 💣 Destroy VM and cache
 vm-reset:
 	@vagrant halt || true
 	@vagrant destroy -f || true
 	@rm -rf .vagrant
 	@echo "💥 Vagrant environment destroyed."
 
-## 📄 Stream Directus logs from inside Vagrant
+## 📄 View Directus logs inside VM
 logs:
 	@vagrant ssh -c 'cd /vagrant && docker compose logs -f'
 
-## 🛡️ Validate all required Docker secrets exist
+## 🛡️ Check for required Docker secrets
 check-secrets:
 	@echo "🔐 Validating Docker secrets..."
 	@for f in $(REQUIRED_SECRETS); do \
@@ -61,34 +61,35 @@ check-secrets:
 	done
 	@echo "✅ All required secrets are present."
 
-## 🚀 Deploy based on context (prefers Vagrant if present)
+## 🚀 Smart deployment logic
 deploy: check-secrets
 	@if [ -d ".vagrant" ]; then \
+		echo "📦 Launching deployment inside Vagrant environment..."; \
 		make update-public && make vagrant-deploy; \
 	else \
+		echo "🐳 Launching Docker Compose directly (macOS local)..."; \
 		make update-public && make docker-deploy; \
 	fi
 
-## 🖥️ Deploy via Vagrant and Ansible
+## 🖥️ Vagrant deployment
 vagrant-deploy:
-	@echo "📦 Provisioning inside Vagrant..."
 	@vagrant up --provider=parallels
 	@vagrant ssh -c 'cd /vagrant && make docker-deploy'
 
-## 🐳 Deploy using Docker Compose (host)
+## 🐳 Docker Compose deployment
 docker-deploy: check-secrets
 	@echo "🐳 Deploying via Docker Compose..."
 	@docker compose up --build -d || { echo '❌ Docker Compose failed.'; exit 1; }
 
-## 🔐 Encrypt vault file
+## 🔐 Vault encrypt
 vault-encrypt:
 	@ansible-vault encrypt $(VAULT_FILE) --vault-password-file=$(VAULT_PASS)
 
-## 🔓 Decrypt vault file
+## 🔓 Vault decrypt
 vault-decrypt:
 	@ansible-vault decrypt $(VAULT_FILE) --vault-password-file=$(VAULT_PASS)
 
-## 🕵️ Verify if vault is encrypted
+## 🔎 Vault status
 vault-check:
 	@echo "🔐 Checking vault encryption..."
 	@if ansible-vault view $(VAULT_FILE) --vault-password-file=$(VAULT_PASS) > /dev/null 2>&1; then \
@@ -97,7 +98,7 @@ vault-check:
 		echo "❌ Vault is NOT encrypted."; exit 1; \
 	fi
 
-## 🚀 Publish Git changes with preflight checks
+## ✅ Secure commit + push
 publish:
 	@echo "🔐 Verifying vault encryption..."
 	@if ! ansible-vault view $(VAULT_FILE) --vault-password-file=$(VAULT_PASS) > /dev/null 2>&1; then \
@@ -111,7 +112,7 @@ publish:
 	./scripts/secret_scan.sh && \
 	git commit -m "$$msg" && git push || echo "❌ Commit blocked due to potential secrets."
 
-## 🔄 Update public/ submodule from GitHub
+## 🔄 Update public/ submodule
 update-public:
 	@echo "🔄 Syncing public/ submodule..."
 	@cd public && \
@@ -120,25 +121,25 @@ update-public:
 		git pull origin production
 	@echo "✅ Submodule updated."
 
-## ✅ Run linter for YAML/Ansible
+## 🧪 Ansible + YAML linting
 lint:
 	@ansible-lint playbook.yml || yamllint ansible/
 
-## 🧪 Run syntax checks
+## 🧪 Syntax check
 test:
 	@echo "🧪 Validating Ansible syntax..."
 	@ansible-playbook playbook.yml --syntax-check
 
-## 🚀 Start only Directus service
+## ▶️ Start only Directus container
 directus-setup:
 	@echo "⚙️ Launching Directus..."
 	@docker compose -f docker-compose.yml up -d directus
 
-## 🔐 Enable systemd-managed Directus stack in Vagrant
+## 🔁 Enable systemd-managed Directus inside VM
 vm-enable-directus:
 	@vagrant ssh -c 'bash /vagrant/scripts/enable_directus_service.sh'
 
-## 🛡️ Scan Docker image for vulnerabilities (placeholder)
+## 🛡️ Stub for container scanning
 docker-scan:
 	@echo "🔍 Scanning Docker images..."
 	@echo "(🛠️ TODO: Integrate Snyk or Docker Scout here)"
