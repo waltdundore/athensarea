@@ -1,12 +1,12 @@
-
 # Makefile for AthensArea.net
-# Supports dual deployment: Vagrant-based or direct Docker Compose
+# Supports dual deployment: Vagrant-managed VM or direct Docker Compose
 
 VAULT_FILE=ansible/group_vars/all/vault.yml
 VAULT_PASS=.vault_pass.txt
 
 .PHONY: setup clean vault-encrypt vault-decrypt vault-check publish \
-        deploy vagrant-deploy docker-deploy test lint directus-setup docker-scan
+        deploy vagrant-deploy docker-deploy test lint directus-setup docker-scan \
+        vm-up vm-ssh dev-up dev-upd vm-reset logs update-public
 
 ## 🔧 Initial setup: permissions, hooks, submodules
 setup:
@@ -19,6 +19,32 @@ setup:
 ## 🧹 Clean working files
 clean:
 	rm -rf .vagrant *.retry __pycache__ logs/*.log
+
+## ☁️ Start the Vagrant dev VM
+vm-up:
+	vagrant up --provider=parallels
+
+## 🔐 SSH into the Vagrant VM
+vm-ssh:
+	vagrant ssh
+
+## 🚀 Start the dev stack inside Vagrant
+dev-up:
+	vagrant ssh -c 'cd /vagrant && docker compose up'
+
+## 🔁 Rebuild and run the stack inside Vagrant
+dev-upd:
+	vagrant ssh -c 'cd /vagrant && docker compose up --build -d'
+
+## 💣 Destroy the Vagrant VM completely
+vm-reset:
+	vagrant halt || true
+	vagrant destroy -f || true
+	rm -rf .vagrant
+
+## 📄 Stream logs from Directus inside the VM
+logs:
+	vagrant ssh -c 'cd /vagrant && docker compose logs -f'
 
 ## 🚀 Smart deploy: chooses Vagrant or Docker Compose based on project context
 deploy:
@@ -37,7 +63,7 @@ vagrant-deploy:
 ## 🐳 Deploy using Docker Compose (no VM)
 docker-deploy:
 	@echo "🐳 Deploying via Docker Compose..."
-	docker-compose up --build -d
+	docker compose up --build -d
 
 ## 🔐 Encrypt vault
 vault-encrypt:
@@ -94,7 +120,7 @@ test:
 ## 🚀 Setup Directus in Docker
 directus-setup:
 	@echo "⚙️ Starting Directus..."
-	docker-compose -f docker-compose.yml up -d directus
+	docker compose -f docker-compose.yml up -d directus
 
 ## 🛡️ Scan Docker image (future Snyk/Docker Scout integration)
 docker-scan:

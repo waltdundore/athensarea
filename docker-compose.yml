@@ -1,68 +1,58 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  directus:
-    image: directus/directus:latest
-    container_name: directus
-    ports:
-      - "${DIRECTUS_PORT}:8055"
-    environment:
-      DB_CLIENT: postgres
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_DATABASE: ${POSTGRES_DB}
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD_FILE: /run/secrets/db_password
-      KEY_FILE: /run/secrets/directus_key
-      SECRET_FILE: /run/secrets/directus_secret
-      ADMIN_EMAIL_FILE: /run/secrets/directus_admin_email
-      ADMIN_PASSWORD_FILE: /run/secrets/directus_admin_password
-    volumes:
-      - ./directus/uploads:/directus/uploads
-      - ./directus/extensions:/directus/extensions
-    secrets:
-      - db_password
-      - directus_key
-      - directus_secret
-      - directus_admin_email
-      - directus_admin_password
-    depends_on:
-      - db
-
   db:
     image: postgres:15
-    container_name: postgres
+    restart: always
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_DB: directus
+      POSTGRES_USER: directus
+      POSTGRES_PASSWORD_FILE: /run/secrets/directus_db_password
     volumes:
       - pgdata:/var/lib/postgresql/data
     secrets:
-      - db_password
+      - directus_db_password
+
+  directus:
+    image: directus/directus:latest
+    restart: always
+    ports:
+      - 8055:8055
+    depends_on:
+      - db
+    environment:
+      KEY_FILE: /run/secrets/directus_key
+      SECRET_FILE: /run/secrets/directus_secret
+      DB_CLIENT: pg
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: directus
+      DB_USER: directus
+      DB_PASSWORD_FILE: /run/secrets/directus_db_password
+    secrets:
+      - directus_key
+      - directus_secret
+      - directus_db_password
 
   web:
     build:
       context: .
       dockerfile: Dockerfile
+    platform: linux/arm64  # ✅ runs native on M1/M2/M3/M4 and Ubuntu on Parallels
     ports:
-      - "${WEB_PORT}:3000"
-    volumes:
-      - ./public:/usr/src/app/public
+      - "3000:80"
     depends_on:
       - directus
+    volumes:
+      - ./public:/usr/share/nginx/html:ro
+
+volumes:
+  pgdata:
 
 secrets:
-  db_password:
-    file: ./secrets/db_password.txt
   directus_key:
     file: ./secrets/directus_key.txt
   directus_secret:
     file: ./secrets/directus_secret.txt
-  directus_admin_email:
-    file: ./secrets/directus_admin_email.txt
-  directus_admin_password:
-    file: ./secrets/directus_admin_password.txt
-
-volumes:
-  pgdata:
+  directus_db_password:
+    file: ./secrets/db_password.txt
