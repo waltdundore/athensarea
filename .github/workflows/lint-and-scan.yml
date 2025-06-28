@@ -1,37 +1,50 @@
 name: Lint & Secret Scan
+
 on:
   push:
     branches: [main, production]
   pull_request:
     branches: [main, production]
+
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.x'
-    - name: Install tools
+
+    - name: Install linting tools
       run: |
         sudo apt-get update
         sudo apt-get install -y yamllint ansible-lint
+
     - name: Run ansible-lint
       run: |
         find ansible -name "*.yml" -exec ansible-lint {} +
+
     - name: Run yamllint
       run: |
         yamllint ansible/
-    - name: Optional vault decrypt
+
+    - name: Optionally decrypt vault
       if: env.ANSIBLE_VAULT_PASSWORD != ''
       run: |
         echo "$ANSIBLE_VAULT_PASSWORD" > vault_pass.txt
         ansible-vault decrypt ansible/group_vars/all/vault.yml --vault-password-file vault_pass.txt
       env:
         ANSIBLE_VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+
     - name: Scan for secrets
-      uses: secret-scanner/action@v1
+      uses: yandex-cloud/actions-secret-scanner@v1
       with:
-        exclude-paths: ansible/group_vars/all/vault.yml
+        exclude: |
+          .git
+          .vagrant
+          node_modules
+          public
+          ansible/group_vars/all/vault.yml
