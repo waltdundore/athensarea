@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/waltdundore/athensarea/actions/workflows/ci.yml/badge.svg)](https://github.com/waltdundore/athensarea/actions)
+[![CI](https://github.com/waltdundore/athensarea/actions/workflows/lint-and-scan.yml/badge.svg)](https://github.com/waltdundore/athensarea/actions)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Directus](https://img.shields.io/badge/CMS-Directus-lightgrey.svg)](https://directus.io/)
 [![Dockerized](https://img.shields.io/badge/Docker-Ready-blue)](https://www.docker.com/)
@@ -100,8 +100,7 @@ To update content:
 make update-public
 ```
 
-- Automatically detects correct branch
-- Pulls latest changes
+- Automatically fetches and pulls latest production changes
 
 ---
 
@@ -120,36 +119,36 @@ make test     # Ansible syntax check
 make publish
 ```
 
-- Validates encryption
-- Scans for secrets before committing
-- Prompts for commit message and pushes
+- Verifies encryption
+- Scans for hardcoded secrets before commit
+- Prompts for message and pushes to Git
 
 ---
 
-## 🔧 Other Utilities
+## 🔧 Utility Targets
 
 ```bash
-make clean             # Purge logs, retries, vagrant cache
-make logs              # View Directus logs inside VM
-make directus-setup    # Start only Directus container
-make docker-scan       # Stub for future vuln scanning
-make vm-enable-directus # Enables systemd-managed Directus service
+make clean              # Remove logs, retries, Vagrant state
+make logs               # View Directus logs inside VM
+make directus-setup     # Start only Directus container
+make docker-scan        # Placeholder for Docker image scanning
+make vm-enable-directus # Enable systemd-managed Directus service in VM
 ```
 
 ---
 
 ## 🛡️ Docker Secrets Required
 
-These must exist before deploying outside Vagrant:
+These files must exist before any local Docker Compose deployment:
 
 - `secrets/db_password.txt`
 - `secrets/directus_key.txt`
 - `secrets/directus_secret.txt`
 
-Automatically validated by `make deploy`.
+They're automatically validated during `make deploy`.
 
 ---
 
 ## 🪪 License
 
-Licensed under the GNU General Public License v3.0. See the [LICENSE](./LICENSE) file for full terms.
+Licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0). See the [LICENSE](./LICENSE) file for full details.
