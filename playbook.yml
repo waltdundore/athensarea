@@ -1,0 +1,4 @@
+- hosts: all
+  tasks:
+    - name: Placeholder
+      debug: msg='Hello Ansible'
