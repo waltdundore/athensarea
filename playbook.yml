@@ -1,4 +1,6 @@
 - hosts: all
-  tasks:
-    - name: Placeholder
-      debug: msg='Hello Ansible'
+  become: true
+  roles:
+    - common
+    - workstation
+    - role: directus  # Add this or include the `systemd.yml` task list in the appropriate role

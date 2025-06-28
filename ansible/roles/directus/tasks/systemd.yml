@@ -1,0 +1,16 @@
+- name: Copy Directus systemd service
+  copy:
+    src: scripts/directus-stack.service
+    dest: /etc/systemd/system/directus-stack.service
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Reload systemd daemon
+  command: systemctl daemon-reload
+
+- name: Enable Directus stack service
+  systemd:
+    name: directus-stack
+    enabled: true
+    state: restarted
