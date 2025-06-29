@@ -1,6 +1,5 @@
 - hosts: all
   become: true
   roles:
-    - common
-    - workstation
-    - role: directus  # Add this or include the `systemd.yml` task list in the appropriate role
+    - role: directus
+
