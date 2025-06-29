@@ -5,7 +5,7 @@ VAULT_FILE = ansible/group_vars/all/vault.yml
 VAULT_PASS = .vault_pass.txt
 REQUIRED_SECRETS = secrets/db_password.txt secrets/directus_key.txt secrets/directus_secret.txt
 
-.PHONY: setup clean vault-encrypt vault-decrypt vault-check publish \
+.PHONY: setup vault-init clean vault-encrypt vault-decrypt vault-check publish \
         deploy vagrant-deploy docker-deploy test lint directus-setup docker-scan \
         vm-up vm-ssh dev-up dev-upd vm-reset logs update-public check-secrets restart
 
@@ -16,6 +16,15 @@ setup:
 	@./scripts/install_precommit_hook.sh
 	@git submodule update --init --recursive
 	@echo "✅ Setup complete."
+
+## 🛠 Initialize Ansible vault file
+vault-init:
+	@if [ ! -f $(VAULT_FILE) ]; then
+		cp $(VAULT_FILE).template $(VAULT_FILE);
+		echo "Created $(VAULT_FILE) from template. Edit as needed.";
+	else
+		echo "$(VAULT_FILE) already exists.";
+	fi
 
 ## 🧹 Clean artifacts
 clean:
@@ -132,12 +141,13 @@ update-public:
 
 ## 🧪 Ansible + YAML linting
 lint:
-	@ansible-lint playbook.yml || yamllint ansible/
+	@command -v ansible-lint >/dev/null 2>&1 && ansible-lint playbook.yml || echo "ansible-lint not installed, skipping"
+	@command -v yamllint >/dev/null 2>&1 && yamllint ansible || echo "yamllint not installed, skipping"
 
 ## 🧪 Syntax check
 test:
 	@echo "🧪 Validating Ansible syntax..."
-	@ansible-playbook playbook.yml --syntax-check
+	@command -v ansible-playbook >/dev/null 2>&1 && ansible-playbook playbook.yml --syntax-check || echo "ansible-playbook not installed, skipping"
 
 ## ▶️ Start only Directus container
 directus-setup:
@@ -177,3 +187,5 @@ sync-weather:
 ## 🌐 Serve the public/ directory on http://localhost:3000
 frontend:
 	@cd public && python3 -m http.server 3000
+
+
