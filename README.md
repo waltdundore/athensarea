@@ -9,16 +9,20 @@ This is the development and deployment framework for [AthensArea.net](http://loc
 Run these commands to get the full dev stack up and running:
 
 ```bash
-make setup         # One-time project setup
-make vm-up         # Boot VM, build, and run Directus stack
-make bootstrap-admin  # Create admin user (only once)
+make setup            # One-time project setup
+make vm-up            # Boot VM, build, and run Directus stack
+make login-directus   # Log into Directus API and save token
+make sync-weather     # Pull weather content into the frontend
+make frontend         # Serve the static frontend on http://localhost:3000
 ```
 
-Then open your browser to: [http://localhost:8055](http://localhost:8055)
+Then open your browser to:
+- CMS: [http://localhost:8055](http://localhost:8055)
+- Frontend: [http://localhost:3000](http://localhost:3000)
 
 To restart from scratch:
 ```bash
-make restart       # Destroys and rebuilds everything cleanly
+make restart          # Destroys and rebuilds everything cleanly
 ```
 
 ---
@@ -30,6 +34,7 @@ make restart       # Destroys and rebuilds everything cleanly
 - **Orchestration:** Docker Compose (inside Vagrant or directly)
 - **Provisioning:** Ansible
 - **Secrets Management:** Docker secrets + Ansible Vault
+- **Weather:** NOAA + local editorial content via Directus
 
 ---
 
@@ -38,6 +43,7 @@ make restart       # Destroys and rebuilds everything cleanly
 ```bash
 make setup
 ```
+
 - Initializes git submodules
 - Installs a pre-commit secret scanning hook
 
@@ -50,21 +56,25 @@ make setup
 ```bash
 make vm-up
 ```
+
 - Starts a Vagrant-managed Debian VM
 - Syncs frontend submodule
 - Builds and starts Docker stack inside VM
 
 To rebuild everything:
+
 ```bash
 make restart
 ```
 
 To SSH into the VM:
+
 ```bash
 make vm-ssh
 ```
 
 To destroy the VM:
+
 ```bash
 make vm-reset
 ```
@@ -74,45 +84,69 @@ make vm-reset
 ```bash
 make docker-deploy
 ```
+
 (Ensure Docker is installed locally, secrets are present, and ports are open)
-
----
-
-## 🛠️ Maintenance
-
-### Update frontend:
-```bash
-make update-public
-```
-
-### View logs:
-```bash
-make logs
-```
-
-### Check services:
-```bash
-make status
-```
 
 ---
 
 ## 🔐 Secrets
 
 Secrets are required in `secrets/`:
+
 - `db_password.txt`
 - `directus_key.txt`
 - `directus_secret.txt`
 
 To verify secrets exist:
+
 ```bash
 make check-secrets
 ```
 
 To check or encrypt the Ansible vault:
+
 ```bash
 make vault-check
 make vault-encrypt
+```
+
+---
+
+## 🌦️ Weather Content Workflow
+
+Use Directus as your editorial backend for weather data.
+
+To sync latest weather reports to your static frontend:
+
+```bash
+make login-directus
+make sync-weather
+```
+
+This creates or updates: `public/content/weather.json`
+
+To preview the frontend:
+
+```bash
+make frontend
+```
+
+Then open: [http://localhost:3000](http://localhost:3000)
+
+---
+
+## 🛠️ Maintenance
+
+### Update frontend:
+
+```bash
+make update-public
+```
+
+### View logs:
+
+```bash
+make logs
 ```
 
 ---
@@ -123,16 +157,6 @@ make vault-encrypt
 make lint   # Ansible + YAML linting
 make test   # Ansible syntax check
 ```
-
----
-
-## 🧑‍💼 First-time Admin Setup
-
-To create a Directus admin user:
-```bash
-make bootstrap-admin
-```
-Then visit [http://localhost:8055](http://localhost:8055) to log in.
 
 ---
 
@@ -149,3 +173,4 @@ Then visit [http://localhost:8055](http://localhost:8055) to log in.
 - Enable CI/CD GitHub Actions pipeline
 - Secure container scanning with Snyk or Docker Scout
 - Theme Directus UI with Athens branding
+- Public GraphQL APIs for articles, classifieds, and weather

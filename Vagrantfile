@@ -8,13 +8,11 @@ Vagrant.configure("2") do |config|
     v.cpus = 8
     v.name = "directus-dev-#{Time.now.to_i}"
   end
-  
-config.vm.synced_folder ".", "/vagrant",
-  type: "nfs",
-  nfs_version: 3,
-  mount_options: ['rw', 'tcp', 'noatime', 'actimeo=2']
 
-
+  config.vm.synced_folder ".", "/vagrant",
+    type: "nfs",
+    nfs_version: 3,
+    mount_options: ['rw', 'tcp', 'noatime', 'actimeo=2']
 
   config.vm.network "forwarded_port", guest: 8055, host: 8055, auto_correct: true
   config.vm.network "forwarded_port", guest: 3000, host: 3000, auto_correct: true

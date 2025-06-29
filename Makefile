@@ -24,12 +24,12 @@ clean:
 	@echo "✅ Clean complete."
 
 ## ☁️ Start the Vagrant VM and launch Docker stack
-vm-up:
+vm-up: check-secrets
 	@vagrant up --provider=parallels
-	@vagrant ssh -c 'cd /vagrant && git submodule update --init --recursive'
+	@vagrant ssh -c 'git config --global --add safe.directory /vagrant && git config --global --add safe.directory /vagrant/public'
+	@vagrant ssh -c 'cd /vagrant && git submodule update --init --recursive || echo "⚠️ Submodule sync failed"'
 	@vagrant ssh -c 'cd /vagrant/public && git checkout production && git pull origin production || true'
-	@vagrant ssh -c 'cd /vagrant && docker compose up --build -d'
-
+	@vagrant ssh -c 'cd /vagrant && docker compose up --build -d || (docker compose logs && exit 1)'
 ## 🔐 SSH into the VM
 vm-ssh:
 	@vagrant ssh
@@ -152,3 +152,28 @@ vm-enable-directus:
 docker-scan:
 	@echo "🔍 Scanning Docker images..."
 	@echo "(🛠️ TODO: Integrate Snyk or Docker Scout here)"
+
+## 🔐 Get Directus access token for API use
+login-directus:
+	@mkdir -p .secrets
+	@echo "🔐 Logging into Directus API..."
+	@curl -s -X POST http://localhost:8055/auth/login \
+	  -H "Content-Type: application/json" \
+	  -d '{"email":"admin@athensarea.net","password":"admin"}' \
+	  | jq -r .data.access_token > .secrets/directus_token
+	@echo "✅ Token saved to .secrets/directus_token"
+
+## ⛅ Sync weather content from Directus to public/content
+sync-weather:
+	@echo "🔄 Pulling weather data from Directus..."
+	@mkdir -p public/content
+	@curl -s -X POST http://localhost:8055/graphql \
+	  -H "Content-Type: application/json" \
+	  -H "Authorization: Bearer $(shell cat .secrets/directus_token)" \
+	  -d '{"query":"{ weather_reports(limit: 5, sort:\"-timestamp\") { title summary temperature timestamp } }"}' \
+	  | jq '.data.weather_reports' > public/content/weather.json
+	@echo "✅ Synced to public/content/weather.json"
+
+## 🌐 Serve the public/ directory on http://localhost:3000
+frontend:
+	@cd public && python3 -m http.server 3000
