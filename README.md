@@ -4,6 +4,25 @@ This is the development and deployment framework for [AthensArea.net](http://loc
 
 ---
 
+## 🚨 Quick Start (No Nonsense)
+
+Run these commands to get the full dev stack up and running:
+
+```bash
+make setup         # One-time project setup
+make vm-up         # Boot VM, build, and run Directus stack
+make bootstrap-admin  # Create admin user (only once)
+```
+
+Then open your browser to: [http://localhost:8055](http://localhost:8055)
+
+To restart from scratch:
+```bash
+make restart       # Destroys and rebuilds everything cleanly
+```
+
+---
+
 ## 🗺️ Overview
 
 - **CMS:** [Directus](https://directus.io/)
