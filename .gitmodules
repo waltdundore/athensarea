@@ -1,3 +1,3 @@
 [submodule "public"]
 	path = public
-	url = git@github.com:waltdundore/athensarea-content.git
+	url = https://github.com/waltdundore/athensarea-content
