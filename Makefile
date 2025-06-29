@@ -7,7 +7,7 @@ REQUIRED_SECRETS = secrets/db_password.txt secrets/directus_key.txt secrets/dire
 
 .PHONY: setup clean vault-encrypt vault-decrypt vault-check publish \
         deploy vagrant-deploy docker-deploy test lint directus-setup docker-scan \
-        vm-up vm-ssh dev-up dev-upd vm-reset logs update-public check-secrets
+        vm-up vm-ssh dev-up dev-upd vm-reset logs update-public check-secrets restart
 
 ## 🔧 Initial setup
 setup:
@@ -23,9 +23,12 @@ clean:
 	@rm -rf .vagrant *.retry __pycache__ logs/*.log
 	@echo "✅ Clean complete."
 
-## ☁️ Start the Vagrant VM
+## ☁️ Start the Vagrant VM and launch Docker stack
 vm-up:
 	@vagrant up --provider=parallels
+	@vagrant ssh -c 'cd /vagrant && git submodule update --init --recursive'
+	@vagrant ssh -c 'cd /vagrant/public && git checkout production && git pull origin production || true'
+	@vagrant ssh -c 'cd /vagrant && docker compose up --build -d'
 
 ## 🔐 SSH into the VM
 vm-ssh:
@@ -45,6 +48,11 @@ vm-reset:
 	@vagrant destroy -f || true
 	@rm -rf .vagrant
 	@echo "💥 Vagrant environment destroyed."
+
+## ♻️ Full reset and launch the environment
+restart:
+	@make vm-reset
+	@make vm-up
 
 ## 📄 View Directus logs inside VM
 logs:
@@ -72,14 +80,14 @@ deploy: check-secrets
 	fi
 
 ## 🖥️ Vagrant deployment
-vagrant-deploy:
+vagrant-deploy: check-secrets
 	@vagrant up --provider=parallels
 	@vagrant ssh -c 'cd /vagrant && make docker-deploy'
 
 ## 🐳 Docker Compose deployment
 docker-deploy: check-secrets
 	@echo "🐳 Deploying via Docker Compose..."
-	@docker compose up --build -d || { echo '❌ Docker Compose failed.'; exit 1; }
+	@docker compose up --build -d || { echo '❌ Docker Compose failed. Please check the logs and try again.'; exit 1; }
 
 ## 🔐 Vault encrypt
 vault-encrypt:
@@ -105,6 +113,7 @@ publish:
 		echo "⚠️ Vault is NOT encrypted. Auto-encrypting..."; \
 		ansible-vault encrypt $(VAULT_FILE) --vault-password-file=$(VAULT_PASS); \
 	fi
+	@make check-secrets
 	@echo "📦 Staging all changes..."
 	@git add .
 	@git status

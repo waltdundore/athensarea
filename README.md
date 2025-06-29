@@ -1,154 +1,132 @@
-[![CI](https://github.com/waltdundore/athensarea/actions/workflows/lint-and-scan.yml/badge.svg)](https://github.com/waltdundore/athensarea/actions)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Directus](https://img.shields.io/badge/CMS-Directus-lightgrey.svg)](https://directus.io/)
-[![Dockerized](https://img.shields.io/badge/Docker-Ready-blue)](https://www.docker.com/)
-[![Vagrant](https://img.shields.io/badge/VM-Vagrant-green)](https://www.vagrantup.com/)
+# AthensArea.net Infrastructure
 
-# AthensArea.net 🚀
-
-A fully containerized, fault-tolerant, Vagrant-integrated publishing platform built on:
-
-- **Directus** (headless CMS)
-- **Docker Compose** (multi-service stack)
-- **Vagrant** + **Ansible** (infrastructure automation)
-- **Git submodules** for content decoupling
+This is the development and deployment framework for [AthensArea.net](http://localhost:8055), a hyper-local content platform powered by Directus, Docker, Vagrant, and Ansible.
 
 ---
 
-## 🔧 Initial Setup
+## 🗺️ Overview
+
+- **CMS:** [Directus](https://directus.io/)
+- **Frontend:** Static site in `public/` (Git submodule: [athensarea-content](https://github.com/waltdundore/athensarea-content))
+- **Orchestration:** Docker Compose (inside Vagrant or directly)
+- **Provisioning:** Ansible
+- **Secrets Management:** Docker secrets + Ansible Vault
+
+---
+
+## 🔧 Setup
 
 ```bash
 make setup
 ```
-
-- Initializes submodules
-- Installs pre-commit secret scanning hook
-- Sets executable permissions on scripts
+- Initializes git submodules
+- Installs a pre-commit secret scanning hook
 
 ---
 
-## 🐳 Local Development with Docker
+## 🚀 Deployment Options
+
+### Option 1: Vagrant + Docker
+
+```bash
+make vm-up
+```
+- Starts a Vagrant-managed Debian VM
+- Syncs frontend submodule
+- Builds and starts Docker stack inside VM
+
+To rebuild everything:
+```bash
+make restart
+```
+
+To SSH into the VM:
+```bash
+make vm-ssh
+```
+
+To destroy the VM:
+```bash
+make vm-reset
+```
+
+### Option 2: Direct Docker Compose (No VM)
 
 ```bash
 make docker-deploy
 ```
-
-- Builds and starts all services in `docker-compose.yml`
-- Uses **Docker secrets**, not bind mounts
-
-To shut down:
-
-```bash
-docker compose down
-```
+(Ensure Docker is installed locally, secrets are present, and ports are open)
 
 ---
 
-## 🖥️ Development with Vagrant + Docker
+## 🛠️ Maintenance
 
-```bash
-make vm-up         # Boots the VM
-make dev-up        # Runs Docker Compose in foreground
-make dev-upd       # Rebuilds containers (detached)
-```
-
-VM Access:
-
-```bash
-make vm-ssh        # SSH into the VM
-make vm-reset      # Fully destroy and reset VM
-```
-
----
-
-## 🚀 Smart Deployment
-
-```bash
-make deploy
-```
-
-- Detects `.vagrant/`
-  - If found → deploys inside VM
-  - If not → deploys via Docker Compose
-- Validates required Docker secrets
-
----
-
-## 🔐 Vault Secrets Management
-
-```bash
-make vault-check     # Ensure vault is encrypted
-make vault-encrypt   # Encrypt with .vault_pass.txt
-make vault-decrypt   # Decrypt for editing
-```
-
-> 🔒 Ensure `.vault_pass.txt` is:
-> ```bash
-> chmod 600 .vault_pass.txt
-> ```
-> …and included in `.gitignore`.
-
----
-
-## 🔄 Update `public/` Submodule
-
-The `public/` folder is a submodule tracking [`athensarea-content`](https://github.com/waltdundore/athensarea-content).
-
-To update content:
-
+### Update frontend:
 ```bash
 make update-public
 ```
 
-- Automatically fetches and pulls latest production changes
-
----
-
-## 🧪 Testing & Linting
-
+### View logs:
 ```bash
-make lint     # YAML + Ansible linting
-make test     # Ansible syntax check
+make logs
+```
+
+### Check services:
+```bash
+make status
 ```
 
 ---
 
-## 🔄 Secure Publish Workflow
+## 🔐 Secrets
 
+Secrets are required in `secrets/`:
+- `db_password.txt`
+- `directus_key.txt`
+- `directus_secret.txt`
+
+To verify secrets exist:
 ```bash
-make publish
+make check-secrets
 ```
 
-- Verifies encryption
-- Scans for hardcoded secrets before commit
-- Prompts for message and pushes to Git
-
----
-
-## 🔧 Utility Targets
-
+To check or encrypt the Ansible vault:
 ```bash
-make clean              # Remove logs, retries, Vagrant state
-make logs               # View Directus logs inside VM
-make directus-setup     # Start only Directus container
-make docker-scan        # Placeholder for Docker image scanning
-make vm-enable-directus # Enable systemd-managed Directus service in VM
+make vault-check
+make vault-encrypt
 ```
 
 ---
 
-## 🛡️ Docker Secrets Required
+## 🧪 Linting + Testing
 
-These files must exist before any local Docker Compose deployment:
-
-- `secrets/db_password.txt`
-- `secrets/directus_key.txt`
-- `secrets/directus_secret.txt`
-
-They're automatically validated during `make deploy`.
+```bash
+make lint   # Ansible + YAML linting
+make test   # Ansible syntax check
+```
 
 ---
 
-## 🪪 License
+## 🧑‍💼 First-time Admin Setup
 
-Licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0). See the [LICENSE](./LICENSE) file for full details.
+To create a Directus admin user:
+```bash
+make bootstrap-admin
+```
+Then visit [http://localhost:8055](http://localhost:8055) to log in.
+
+---
+
+## 🤝 Contributing
+
+- Always commit with the vault encrypted (`make publish` helps ensure that)
+- Run `make check-secrets` before pushing
+
+---
+
+## 📦 Roadmap
+
+- Add optional systemd support for Directus in VM
+- Enable CI/CD GitHub Actions pipeline
+- Secure container scanning with Snyk or Docker Scout
+- Theme Directus UI with Athens branding
