@@ -86,6 +86,14 @@ make docker-deploy
 ```
 
 (Ensure Docker is installed locally, secrets are present, and ports are open)
+### Option 3: DigitalOcean Deployment
+
+Run the helper script on your Debian 12 droplet:
+```bash
+sudo ./scripts/digitalocean_setup.sh <REPO_URL> <TARGET_DIR>
+```
+This installs Docker, clones the repo, syncs the `public` submodule, and starts the Directus stack using systemd.
+---
 
 ---
 
